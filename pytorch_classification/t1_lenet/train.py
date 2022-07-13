@@ -9,7 +9,9 @@ from pytorch_classification.t1_lenet.model import LeNet
 
 
 def test():
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = LeNet()
+    model = model.to(device)
     summary(model, (3, 32, 32))
 
 
