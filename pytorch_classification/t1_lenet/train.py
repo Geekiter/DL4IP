@@ -42,7 +42,7 @@ def train():
             optimizer.step()
 
             predict = torch.max(outputs, dim=1)[1]
-            correct_num += (predict == targets).sum().item()
+            correct_num += torch.eq(predict, targets).sum().item()
         print("%d, acc: %.3f" % (epoch + 1, correct_num / len(train_loader)))
 
         correct_num = 0
@@ -53,10 +53,9 @@ def train():
                 targets = targets.to(device)
 
                 outputs = model(inputs)
-                loss = loss_function(outputs, targets)
                 predict = torch.argmax(outputs, 1)
-                correct_num += (predict == targets).sum().item()
-            print("%d, acc: %.3f" % (epoch + 1, correct_num / len(train_loader)))
+                correct_num += torch.eq(predict, targets).sum().item()
+            print("%d, acc: %.3f" % (epoch + 1, correct_num / len(val_loader)))
 
     save_path = "./LeNet.pth"
     torch.save(model.state_dict(), save_path)
