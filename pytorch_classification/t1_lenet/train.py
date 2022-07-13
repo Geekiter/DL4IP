@@ -32,6 +32,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     for epoch in range(5):
         correct_num = 0
+        targets_num = 0
         for step, (inputs, targets) in enumerate(train_loader, start=0):
             inputs = inputs.to(device)
             targets = targets.to(device)
@@ -43,11 +44,13 @@ def train():
             loss.backward()
             optimizer.step()
 
+            targets_num += targets.shape[0]
             predict = torch.max(outputs, dim=1)[1]
             correct_num += torch.eq(predict, targets).sum().item()
-        print("%d, acc: %.3f" % (epoch + 1, correct_num / len(train_loader)))
+        print("%d, acc: %.3f" % (epoch + 1, correct_num / targets_num))
 
         correct_num = 0
+        targets_num = 0
         model.eval()
         with torch.no_grad():
             for index, (inputs, targets) in enumerate(val_loader):
@@ -55,9 +58,11 @@ def train():
                 targets = targets.to(device)
 
                 outputs = model(inputs)
+
+                targets_num += targets.shape[0]
                 predict = torch.argmax(outputs, 1)
                 correct_num += torch.eq(predict, targets).sum().item()
-            print("%d, acc: %.3f" % (epoch + 1, correct_num / len(val_loader)))
+            print("%d, acc: %.3f" % (epoch + 1, correct_num / targets_num))
 
     save_path = "./LeNet.pth"
     torch.save(model.state_dict(), save_path)
