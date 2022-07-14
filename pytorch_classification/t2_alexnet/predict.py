@@ -7,7 +7,7 @@ from pytorch_classification.t1_lenet.model import LeNet
 
 def predict(img_path):
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((32, 32)),
         transforms.ToTensor(),
         transforms.Normalize(
             (0.5, 0.5, 0.5),
