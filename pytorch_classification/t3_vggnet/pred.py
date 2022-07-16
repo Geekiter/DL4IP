@@ -1,7 +1,8 @@
 import torch
 from PIL import Image
 from torchvision.transforms import transforms
-from pytorch_classification.t2_alexnet.model import AlexNet
+
+from pytorch_classification.t3_vggnet.model import vgg
 
 
 def predict(model_path, img_path):
@@ -14,7 +15,7 @@ def predict(model_path, img_path):
         )
     ])
     classes = ("plane", 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'horse', 'ship', 'truck')
-    model = AlexNet()
+    model = vgg(num_classes=len(classes))
     model.load_from_checkpoint(model_path)
     im = Image.open(img_path)
     im = transform(im)
