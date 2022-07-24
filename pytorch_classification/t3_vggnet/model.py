@@ -45,28 +45,17 @@ class VGG(pl.LightningModule):
         self.log('train_acc', self.train_acc, on_step=True, on_epoch=False)
 
         self.log("training loss", loss)
-
-    def training_step_end(self, batch_parts):
-        # predictions from each GPU
-        predictions = batch_parts["pred"]
-        # losses from each GPU
-        losses = batch_parts["loss"]
-
-        gpu_0_prediction = predictions[0]
-        gpu_1_prediction = predictions[1]
-
-        # do something with both outputs
-        return (losses[0] + losses[1]) / 2
+        return loss
 
     def test_step(self, batch, batch_idx, *args, **kwargs):
         inputs, targets = batch
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
 
+
         outputs = self(inputs)
         loss = F.cross_entropy(outputs, targets)
         self.log("test loss", loss)
-
 
 def make_features(cfg: list):
     layers = []
@@ -90,7 +79,7 @@ cfgs = {
 
 
 def vgg(model_name="vgg16", **kwargs):
-    assert model_name in cfgs, "model name not in cfgs dict"
+    assert model_name in cfgs, "model.py name not in cfgs dict"
     cfg = cfgs[model_name]
     model = VGG(make_features(cfg), **kwargs)
     return model
