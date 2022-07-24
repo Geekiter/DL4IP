@@ -118,13 +118,13 @@ class GoogLeNet(pl.LightningModule):
 
         x = self.inception4a(x)
         if self.training and self.aux_logits:
-            aux1 = self.aux1
+            aux1 = self.aux1(x)
 
         x = self.inception4b(x)
         x = self.inception4c(x)
         x = self.inception4d(x)
         if self.training and self.aux_logits:
-            aux2 = self.aux2
+            aux2 = self.aux2(x)
 
         x = self.inception4e(x)
         x = self.maxpool4(x)
