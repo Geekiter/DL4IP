@@ -158,10 +158,13 @@ class GoogLeNet(pl.LightningModule):
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
 
-        outputs = self(inputs)
-        loss = F.cross_entropy(outputs, targets)
+        logits, aux_logits2, aux_logits1 = self(inputs)
+        loss0 = F.cross_entropy(logits, targets)
+        loss1 = F.cross_entropy(aux_logits1, targets)
+        loss2 = F.cross_entropy(aux_logits2, targets)
+        loss = loss0 + loss1 * 0.3 + loss2 * 0.3
 
-        self.train_acc(outputs, targets)
+        self.train_acc(logits, targets)
         self.log('train_acc', self.train_acc, on_step=True, on_epoch=False)
 
         self.log("training loss", loss)
@@ -172,6 +175,9 @@ class GoogLeNet(pl.LightningModule):
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
 
-        outputs = self(inputs)
-        loss = F.cross_entropy(outputs, targets)
+        logits, aux_logits2, aux_logits1 = self(inputs)
+        loss0 = F.cross_entropy(logits, targets)
+        loss1 = F.cross_entropy(aux_logits1, targets)
+        loss2 = F.cross_entropy(aux_logits2, targets)
+        loss = loss0 + loss1 * 0.3 + loss2 * 0.3
         self.log("test loss", loss)
