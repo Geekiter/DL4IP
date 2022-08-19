@@ -51,7 +51,7 @@ def train(model_path=None):
     trainer = Trainer(max_epochs=max_epoch, accelerator=accelerator, log_every_n_steps=40)
 
     classes = ("plane", 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'horse', 'ship', 'truck')
-    model = efficientnet_b0()(num_classes=len(classes))
+    model = efficientnet_b0(num_classes=len(classes))
     if model_path is not None:
         model.load_from_checkpoint(model_path)
     trainer.fit(model, train_loader)
