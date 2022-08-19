@@ -1,13 +1,17 @@
-import math
 import copy
-from functools import partial
+import math
 from collections import OrderedDict
-from typing import Optional, Callable
+from functools import partial
+from typing import Callable
+from typing import Optional
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import torchmetrics
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor
-from torch.nn import functional as F
 
 
 def _make_divisible(ch, divisor=8, min_ch=None):
@@ -50,6 +54,7 @@ class DropPath(nn.Module):
     Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
     "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
     """
+
     def __init__(self, drop_prob=None):
         super(DropPath, self).__init__()
         self.drop_prob = drop_prob
@@ -86,7 +91,7 @@ class ConvBNActivation(nn.Sequential):
 
 class SqueezeExcitation(nn.Module):
     def __init__(self,
-                 input_c: int,   # block input channel
+                 input_c: int,  # block input channel
                  expand_c: int,  # block expand channel
                  squeeze_factor: int = 4):
         super(SqueezeExcitation, self).__init__()
@@ -108,14 +113,14 @@ class SqueezeExcitation(nn.Module):
 class InvertedResidualConfig:
     # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, drop_connect_rate
     def __init__(self,
-                 kernel: int,          # 3 or 5
+                 kernel: int,  # 3 or 5
                  input_c: int,
                  out_c: int,
                  expanded_ratio: int,  # 1 or 6
-                 stride: int,          # 1 or 2
-                 use_se: bool,         # True
+                 stride: int,  # 1 or 2
+                 use_se: bool,  # True
                  drop_rate: float,
-                 index: str,           # 1a, 2a, 2b, ...
+                 index: str,  # 1a, 2a, 2b, ...
                  width_coefficient: float):
         self.input_c = self.adjust_channels(input_c, width_coefficient)
         self.kernel = kernel
@@ -192,7 +197,7 @@ class InvertedResidual(nn.Module):
         return result
 
 
-class EfficientNet(nn.Module):
+class EfficientNet(pl.LightningModule):
     def __init__(self,
                  width_coefficient: float,
                  depth_coefficient: float,
@@ -203,6 +208,7 @@ class EfficientNet(nn.Module):
                  norm_layer: Optional[Callable[..., nn.Module]] = None
                  ):
         super(EfficientNet, self).__init__()
+        self.train_acc = torchmetrics.Accuracy()
 
         # kernel_size, in_channel, out_channel, exp_ratio, strides, use_SE, drop_connect_rate, repeats
         default_cnf = [[3, 32, 16, 1, 1, True, drop_connect_rate, 1],
@@ -300,6 +306,33 @@ class EfficientNet(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         return self._forward_impl(x)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3)
+        return optimizer
+
+    def training_step(self, batch, batch_idx, *args, **kwargs) -> STEP_OUTPUT:
+        inputs, targets = batch
+        inputs = inputs.to(self.device)
+        targets = targets.to(self.device)
+
+        outputs = self(inputs)
+        loss = F.cross_entropy(outputs, targets)
+
+        self.train_acc(outputs, targets)
+        self.log('train_acc', self.train_acc, on_step=True, on_epoch=False)
+
+        self.log("training loss", loss)
+        return loss
+
+    def test_step(self, batch, batch_idx, *args, **kwargs):
+        inputs, targets = batch
+        inputs = inputs.to(self.device)
+        targets = targets.to(self.device)
+
+        outputs = self(inputs)
+        loss = F.cross_entropy(outputs, targets)
+        self.log("test loss", loss)
 
 
 def efficientnet_b0(num_classes=1000):
